@@ -53,7 +53,6 @@ class Api {
 
   // 持有基金列表
   Future<OwnerFund> getFundDetail(code) async {
-
     try {
       int now = DateTime.now().millisecondsSinceEpoch;
       var r = await dio.get(
