@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:fundapp/common/funs.dart';
@@ -25,6 +26,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List<Data> searchResultList;
   List lastFundCodeList;
   List<OwnerFund> ownerFundList;
+  List<String> ownerFundData;
   int otherHeight = 0;
   TextEditingController _netValueController = new TextEditingController();
   TextEditingController _shareController = new TextEditingController();
@@ -39,6 +41,11 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     });
     update(true);
+    if((DateTime.now().hour > 9 || DateTime.now().hour == 9 && DateTime.now().minute>=30) && DateTime.now().hour <=14) {
+      Timer countdownTimer =  new Timer.periodic(new Duration(seconds: 5), (timer) {
+        update(true);
+      });
+    }
   }
 
   // true--initState  false--other
@@ -47,6 +54,9 @@ class _MyHomePageState extends State<MyHomePage> {
     if(isInit) {
       setState(() {
         lastFundCodeList = prefs.getStringList('fundCodeList')??[];
+      });
+      setState(() {
+        ownerFundData = prefs.getStringList('ownerFundData')??[];
       });
     }
     List<OwnerFund> tempArr = [];
@@ -108,6 +118,7 @@ class _MyHomePageState extends State<MyHomePage> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setStringList('fundCodeList', []);
     prefs.setStringList('ownerFundData', []);
+    update(true);
   }
 
   ShowNetValueAndShareModal (BuildContext context, code) async {
@@ -140,7 +151,10 @@ class _MyHomePageState extends State<MyHomePage> {
           oldOwnerFundDataList.add(objData);
         }
         prefs.setStringList('ownerFundData', oldOwnerFundDataList);
-        print(prefs.getStringList('ownerFundData'));
+//        print(prefs.getStringList('ownerFundData'));
+        setState(() {
+          ownerFundData = prefs.getStringList('ownerFundData');
+        });
         Navigator.pop(context);
       },
     );
@@ -200,9 +214,9 @@ class _MyHomePageState extends State<MyHomePage> {
     List<String> oldOwnerFundDataList = prefs.getStringList('ownerFundData')??[];
     bool flag = true;
     oldOwnerFundDataList.forEach((e) {
-      print(code);
-      print(e);
-      print(e.split('-~-')[0]);
+//      print(code);
+//      print(e);
+//      print(e.split('-~-')[0]);
       if(code.toString() == e.split('-~-')[0]) {
         _netValueController.text = e.split('-~-')[1];
         _shareController.text = e.split('-~-')[2];
@@ -222,10 +236,70 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+    costGains (OwnerFund item) {
+
+      double shareCount = 0.0;
+      ownerFundData.forEach((e) {
+        if(item.fundcode.toString() == e.split('-~-')[0]) {
+          shareCount = double.parse(e.split('-~-')[2]);
+        }
+      });
+      return ((double.parse(item.dwjz) - double.parse(item.dwjz) / (1 + double.parse(item.gszzl) * 0.01)) * shareCount).toStringAsFixed(2);
+    }
+
+  costItemAllGains (OwnerFund item) {
+
+    double netValue = 0.0;
+    double shareCount = 0.0;
+    ownerFundData.forEach((e) {
+      if(item.fundcode.toString() == e.split('-~-')[0]) {
+        netValue = double.parse(e.split('-~-')[1]);
+        shareCount = double.parse(e.split('-~-')[2]);
+      }
+    });
+    bool flag = false;
+    try {
+      int yy = int.parse(item.gztime.substring(0, 10).split('-')[0]);
+      int mm = int.parse(item.gztime.substring(0, 10).split('-')[1]);
+      int dd = int.parse(item.gztime.substring(0, 10).split('-')[2]);
+      var thatDay = DateTime(yy, mm, dd, 24, 00, 00);
+//      print('item.dwjz: ${DateTime(yy, mm, dd, 24, 00, 00)}');
+//      print(DateTime.now().isAfter(thatDay));
+      flag = DateTime.now().isAfter(thatDay);
+    } catch (e) {
+      print(e);
+    }
+
+    return flag ? ((double.parse(item.gsz) - netValue) * shareCount).toStringAsFixed(2) : ((double.parse(item.dwjz) - netValue) * shareCount).toStringAsFixed(2);
+  }
+
+  calculateMoney(OwnerFund item) {
+    double shareCount = 0.0;
+    bool flag = false;
+    ownerFundData.forEach((e) {
+      if(item.fundcode.toString() == e.split('-~-')[0]) {
+        shareCount = double.parse(e.split('-~-')[2]);
+      }
+    });
+    try {
+      int yy = int.parse(item.gztime.substring(0, 10).split('-')[0]);
+      int mm = int.parse(item.gztime.substring(0, 10).split('-')[1]);
+      int dd = int.parse(item.gztime.substring(0, 10).split('-')[2]);
+      var thatDay = DateTime(yy, mm, dd, 24, 00, 00);
+//      print('item.dwjz: ${DateTime(yy, mm, dd, 24, 00, 00)}');
+//      print(DateTime.now().isAfter(thatDay));
+      flag = DateTime.now().isAfter(thatDay);
+    } catch (e) {
+      print(e);
+    }
+    String sum = flag ? (double.parse(item.gsz) * shareCount).toStringAsFixed(2) : (double.parse(item.dwjz) * shareCount).toStringAsFixed(2);
+    return sum;
+  }
+
   @override
   Widget build(BuildContext context) {
-    print('lastFundCodeList: $lastFundCodeList');
-    print('ownerFundList: $ownerFundList');
+//    print('lastFundCodeList: $lastFundCodeList');
+//    print('ownerFundList: $ownerFundList');
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -259,10 +333,10 @@ class _MyHomePageState extends State<MyHomePage> {
                         onTap: ()=>ShowNetValueAndShareModal(context, ownerFundList[index]!=null ? ownerFundList[index].fundcode : '--'),
                         child: Container(
                           padding: EdgeInsets.only(top: 2, bottom: 2),
-                          height: 44,
+                          height: 104,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               Container(
                                 child: Column(
@@ -279,7 +353,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                               style: TextStyle(color: Colors.black, fontSize: 14),),
                                           ),
                                           Container(
-                                            child: Text(ownerFundList[index]!=null ? ownerFundList[index].dwjz.toString() : '未知',
+                                            child: Text(ownerFundList[index]!=null ? ownerFundList[index].fundcode : '未知',
                                               style: TextStyle(color: Colors.black, fontSize: 14),),
                                           ),
                                         ],
@@ -291,11 +365,59 @@ class _MyHomePageState extends State<MyHomePage> {
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
                                           Container(
-                                            child: Text(ownerFundList[index]!=null ? ownerFundList[index].fundcode : '未知',
+                                            child: Text('估算净值',
                                               style: TextStyle(color: Colors.black, fontSize: 14),),
                                           ),
                                           Container(
-                                            child: Text('单位净值',
+                                            child: Text(ownerFundList[index]!=null ? '${ownerFundList[index].gszzl.toString()}% (${double.parse(ownerFundList[index].gsz).toStringAsFixed(1)})' : '未知',
+                                              style: TextStyle(color: Colors.black, fontSize: 14),),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Container(
+                                      width: MediaQuery.of(context).size.width-37-70,
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Container(
+                                            child: Text('预估收益',
+                                              style: TextStyle(color: Colors.black, fontSize: 14),),
+                                          ),
+                                          Container(
+                                            child: Text(ownerFundList[index]!=null ? costGains(ownerFundList[index]) : '未知',
+                                              style: TextStyle(color: Colors.black, fontSize: 14),),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Container(
+                                      width: MediaQuery.of(context).size.width-37-70,
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Container(
+                                            child: Text('累计收益',
+                                              style: TextStyle(color: Colors.black, fontSize: 14),),
+                                          ),
+                                          Container(
+                                            child: Text(ownerFundList[index]!=null ? costItemAllGains(ownerFundList[index]) : '未知',
+                                              style: TextStyle(color: Colors.black, fontSize: 14),),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    Container(
+                                      width: MediaQuery.of(context).size.width-37-70,
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Container(
+                                            child: Text('持有金额',
+                                              style: TextStyle(color: Colors.black, fontSize: 14),),
+                                          ),
+                                          Container(
+                                            child: Text(ownerFundList[index]!=null ? calculateMoney(ownerFundList[index]) : '未知',
                                               style: TextStyle(color: Colors.black, fontSize: 14),),
                                           ),
                                         ],

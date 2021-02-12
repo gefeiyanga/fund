@@ -71,8 +71,10 @@ class _SearchBarState extends State<SearchBar> {
                       children: <Widget>[
                         Expanded(
                           child: Container(
-                            color: Colors.deepOrange,
                             alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: Colors.deepOrange,
+                            ),
                             child: TextField(
                               controller: controller,
                               style: TextStyle(color: Colors.white),
@@ -93,9 +95,9 @@ class _SearchBarState extends State<SearchBar> {
                                 hintText: '请输入基金代码、名称或简拼',
                                 hintStyle: TextStyle(color: Colors.white),
                                 border: new OutlineInputBorder(
-                                  borderRadius: const BorderRadius.all(
-                                    const Radius.circular(20.0),
-                                  ),
+//                                  borderRadius: const BorderRadius.all(
+//                                    const Radius.circular(20.0),
+//                                  ),
                                   borderSide: BorderSide(
                                     width: 0,
                                     style: BorderStyle.none,
