@@ -41,11 +41,19 @@ class _MyHomePageState extends State<MyHomePage> {
       });
     });
     update(true);
-    if((DateTime.now().hour > 9 || DateTime.now().hour == 9 && DateTime.now().minute>=30) && DateTime.now().hour <=14) {
+    if((DateTime.now().hour > 9 || (DateTime.now().hour == 9 && DateTime.now().minute>=30)) && DateTime.now().hour <=14) {
       Timer countdownTimer =  new Timer.periodic(new Duration(seconds: 5), (timer) {
         update(true);
       });
     }
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _netValueController.dispose();
+    _shareController.dispose();
   }
 
   // true--initState  false--other
@@ -121,7 +129,7 @@ class _MyHomePageState extends State<MyHomePage> {
     update(true);
   }
 
-  ShowNetValueAndShareModal (BuildContext context, code) async {
+  showNetValueAndShareModal (BuildContext context, code) async {
     // set up the button
     Widget cancelButton = FlatButton(
       child: Text("取消"),
@@ -236,16 +244,16 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
-    costGains (OwnerFund item) {
+  costGains (OwnerFund item) {
 
-      double shareCount = 0.0;
-      ownerFundData.forEach((e) {
-        if(item.fundcode.toString() == e.split('-~-')[0]) {
-          shareCount = double.parse(e.split('-~-')[2]);
-        }
-      });
-      return ((double.parse(item.dwjz) - double.parse(item.dwjz) / (1 + double.parse(item.gszzl) * 0.01)) * shareCount).toStringAsFixed(2);
-    }
+    double shareCount = 0.0;
+    ownerFundData.forEach((e) {
+      if(item.fundcode.toString() == e.split('-~-')[0]) {
+        shareCount = double.parse(e.split('-~-')[2]);
+      }
+    });
+    return ((double.parse(item.dwjz) - double.parse(item.dwjz) / (1 + double.parse(item.gszzl) * 0.01)) * shareCount).toStringAsFixed(2);
+  }
 
   costItemAllGains (OwnerFund item) {
 
@@ -298,8 +306,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-//    print('lastFundCodeList: $lastFundCodeList');
-//    print('ownerFundList: $ownerFundList');
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -330,7 +336,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   itemBuilder: (context, index) {
                     return index<ownerFundList.length ?
                       InkWell(
-                        onTap: ()=>ShowNetValueAndShareModal(context, ownerFundList[index]!=null ? ownerFundList[index].fundcode : '--'),
+                        onTap: ()=>showNetValueAndShareModal(context, ownerFundList[index]!=null ? ownerFundList[index].fundcode : '--'),
                         child: Container(
                           padding: EdgeInsets.only(top: 2, bottom: 2),
                           height: 104,
