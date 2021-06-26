@@ -40,7 +40,6 @@ class Api {
       var result = searchResultItemFromJson(r.toString());
       if (result!=null&&result.errCode==0) {
 
-        print('data: ${result.datas}');
         return result.datas;
       } else {
         showToast('SOMETHING ERROR!');

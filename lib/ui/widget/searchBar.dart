@@ -61,7 +61,7 @@ class _SearchBarState extends State<SearchBar> {
       child: Padding(
         padding: EdgeInsets.only(top: 0,),
         child: Container(
-          height: 52.0,
+          height: 64.0,
           child: new Padding(
               padding: const EdgeInsets.all(6.0),
               child: new Card(
@@ -80,7 +80,7 @@ class _SearchBarState extends State<SearchBar> {
                               style: TextStyle(color: Colors.white),
                               onChanged: (text)=>handleChanged(text),
                               decoration: new InputDecoration(
-                                fillColor: Color(0xEE2E3844),
+                                fillColor: Color(0xFFfc5531),
                                 filled: true,
                                 prefixIcon: IconButton(
                                   padding: EdgeInsets.all(4.0),
@@ -93,7 +93,7 @@ class _SearchBarState extends State<SearchBar> {
                                 ) : null,
                                 contentPadding: EdgeInsets.all(4),
                                 hintText: '请输入基金代码、名称或简拼',
-                                hintStyle: TextStyle(color: Colors.white),
+                                hintStyle: TextStyle(color: Colors.white, fontSize: 16),
                                 border: new OutlineInputBorder(
 //                                  borderRadius: const BorderRadius.all(
 //                                    const Radius.circular(20.0),
