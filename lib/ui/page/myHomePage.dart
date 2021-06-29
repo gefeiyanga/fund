@@ -26,7 +26,7 @@ class _MyHomePageState extends State<MyHomePage> {
   List lastFundCodeList;
   List<OwnerFund> ownerFundList;
   List<String> ownerFundData;
-  List<bool> _isOpen = [false];
+  List<bool> _isOpen = [false, false];
   int otherHeight = 0;
   TextEditingController _netValueController = new TextEditingController();
   TextEditingController _shareController = new TextEditingController();
@@ -76,7 +76,17 @@ class _MyHomePageState extends State<MyHomePage> {
     List<OwnerFund> tempArr = [];
     await Future.forEach(lastFundCodeList, (code) async {
       var result = await Api().getFundDetail(code);
-      tempArr.add(result);
+
+      if(result!=null) {
+        tempArr.add(result);
+      } else {
+
+        var arr = lastFundCodeList.where((element) => element!=code).toList();
+        prefs.setStringList('fundCodeList', arr);
+        setState(() {
+          lastFundCodeList = arr;
+        });
+      }
     });
     setState(() {
       ownerFundList = tempArr;
@@ -200,7 +210,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   WhitelistingTextInputFormatter(RegExp("[.]|[0-9]")),
                 ],
                 decoration: InputDecoration(
-                  labelText: '当前净值',
+                  labelText: '持仓成本价',
                   enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(color: Color(0x19000000)),
                   ),
@@ -255,15 +265,19 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   costItemPreGains(OwnerFund item) {
+    print(item);
+    if(item == null) {
+      return '0.00';
+    }
     double shareCount = 0.00;
     ownerFundData.forEach((e) {
-      if (item.fundcode.toString() == e.split('-~-')[0]) {
+      if (item?.fundcode.toString() == e.split('-~-')[0]) {
         shareCount = double.parse(e.split('-~-')[2]);
       }
     });
-    return ((double.parse(item.dwjz) -
-                double.parse(item.dwjz) /
-                    (1 + double.parse(item.gszzl) * 0.01)) *
+    return ((double.parse(item?.dwjz) -
+                double.parse(item?.dwjz) /
+                    (1 + double.parse(item?.gszzl) * 0.01)) *
             shareCount)
         .toStringAsFixed(2);
   }
@@ -380,482 +394,959 @@ class _MyHomePageState extends State<MyHomePage> {
 //                    ], begin: Alignment.bottomLeft, end: Alignment.topRight)
                 ),
                 child: ExpansionPanelList(
-                  dividerColor: Colors.red,
+                  dividerColor: Colors.white,
                   animationDuration: Duration(milliseconds: 600),
                   expansionCallback: (i, isOpen) =>
                       {setState(() => _isOpen[i] = !isOpen)},
                   children: [
                     ExpansionPanel(
-                        canTapOnHeader: true,
-                        isExpanded: _isOpen[0],
-                        headerBuilder: (context, isOpen) => Container(
-                              height: 90,
-                              margin: EdgeInsets.only(left: 14, top: 6, bottom: 6),
-                              padding: EdgeInsets.fromLTRB(12, 10, 12, 10),
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.all(
+                      canTapOnHeader: true,
+                      isExpanded: _isOpen[0],
+                      headerBuilder: (context, isOpen) => Container(
+                        height: 90,
+                        margin:
+                        EdgeInsets.only(left: 14, top: 6, bottom: 6),
+                        padding: EdgeInsets.fromLTRB(12, 10, 12, 10),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(8),
+                          ),
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.orange,
+                              Color(0xFFfc5531),
+                            ],
+                            begin: Alignment.bottomLeft,
+                            end: Alignment.topRight)),
+                        child: Column(
+                          mainAxisAlignment:
+                          MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Row(
+                              mainAxisAlignment:
+                              MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment:
+                              CrossAxisAlignment.center,
+                              children: [
+                                Container(
+                                  child: Text(
+                                    '累计收益：',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16),
+                                  ),
+                                ),
+                                Container(
+                                  child: FutureBuilder<String>(
+                                    future: costAllGains(),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.hasData) {
+                                        return Text(
+                                          snapshot.data,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16),
+                                        );
+                                      }
+                                      return Text(
+                                        '--',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16),
+                                      );
+                                    }),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment:
+                              MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment:
+                              CrossAxisAlignment.center,
+                              children: [
+                                Container(
+                                  child: Text(
+                                    '当日预估收益：',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16),
+                                  ),
+                                ),
+                                Container(
+                                  child: Text(
+                                    costPreGains(),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16),
+                                  ),
+                                )
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment:
+                              MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment:
+                              CrossAxisAlignment.center,
+                              children: [
+                                Container(
+                                  child: Text(
+                                    '总持仓：',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16),
+                                  ),
+                                ),
+                                Container(
+                                  child: FutureBuilder<String>(
+                                    future: calculateAllMoney(),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.hasData) {
+                                        return Text(
+                                          snapshot.data,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16),
+                                        );
+                                      }
+                                      return Text(
+                                        '--',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16),
+                                      );
+                                    }),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      body: Container(
+                        padding:
+                        EdgeInsets.only(top: 0, left: 14, right: 14),
+                        height: 400,
+                        child:
+                        ownerFundList != null &&
+                          ownerFundList.length > 0
+                          ? ListView.separated(
+                          separatorBuilder:
+                            (BuildContext context, int index) {
+                            return Divider(
+                              height: 20,
+                              color: Colors.white,
+                            );
+                          },
+                          itemCount: ownerFundList.length + 1,
+                          itemBuilder: (context, index) {
+                            return index < ownerFundList.length
+                              ? InkWell(
+                              onTap: () =>
+                                showNetValueAndShareModal(
+                                  context,
+                                  ownerFundList[
+                                  index] !=
+                                    null
+                                    ? ownerFundList[
+                                  index]
+                                    .fundcode
+                                    : '--'),
+                              child: Container(
+                                padding: EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  borderRadius:
+                                  BorderRadius.all(
                                     Radius.circular(8),
                                   ),
-                                  gradient: LinearGradient(
-                                      colors: [
-                                        Colors.orange,
-                                        Color(0xFFfc5531),
-                                      ],
-                                      begin: Alignment.bottomLeft,
-                                      end: Alignment.topRight)),
-                              child: Column(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      Container(
-                                        child: Text(
-                                          '累计收益：',
-                                          style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16),
-                                        ),
-                                      ),
-                                      Container(
-                                        child: FutureBuilder<String>(
-                                            future: costAllGains(),
-                                            builder: (context, snapshot) {
-                                              if (snapshot.hasData) {
-                                                return Text(
-                                                  snapshot.data,
-                                                  style: TextStyle(
-                                                      color: Colors.white,
+                                  gradient:
+                                  LinearGradient(
+                                    colors: [
+                                      Colors.orange,
+                                      Color(0xFFfc5531),
+                                    ],
+                                    begin: Alignment
+                                      .bottomLeft,
+                                    end: Alignment
+                                      .topRight)),
+                                height: 144,
+                                child: Row(
+                                  mainAxisAlignment:
+                                  MainAxisAlignment
+                                    .spaceBetween,
+                                  crossAxisAlignment:
+                                  CrossAxisAlignment
+                                    .center,
+                                  children: [
+                                    Container(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                        CrossAxisAlignment
+                                          .start,
+                                        mainAxisAlignment:
+                                        MainAxisAlignment
+                                          .spaceBetween,
+                                        children: [
+                                          Container(
+                                            width: MediaQuery.of(
+                                              context)
+                                              .size
+                                              .width -
+                                              37 -
+                                              70,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                .spaceBetween,
+                                              children: [
+                                                Container(
+                                                  child:
+                                                  Text(
+                                                    ownerFundList[index] !=
+                                                      null
+                                                      ? ownerFundList[index].name
+                                                      : '--',
+                                                    style: TextStyle(
+                                                      color:
+                                                      Colors.white,
                                                       fontSize: 16),
-                                                );
-                                              }
-                                              return Text(
-                                                '--',
-                                                style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 16),
-                                              );
-                                            }),
-                                      ),
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      Container(
-                                        child: Text(
-                                          '当日预估收益：',
-                                          style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16),
-                                        ),
-                                      ),
-                                      Container(
-                                        child: Text(
-                                          costPreGains(),
-                                          style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16),
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.center,
-                                    children: [
-                                      Container(
-                                        child: Text(
-                                          '总持仓：',
-                                          style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 16),
-                                        ),
-                                      ),
-                                      Container(
-                                        child: FutureBuilder<String>(
-                                            future: calculateAllMoney(),
-                                            builder: (context, snapshot) {
-                                              if (snapshot.hasData) {
-                                                return Text(
-                                                  snapshot.data,
-                                                  style: TextStyle(
-                                                      color: Colors.white,
-                                                      fontSize: 16),
-                                                );
-                                              }
-                                              return Text(
-                                                '--',
-                                                style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 16),
-                                              );
-                                            }),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                        body: Container(
-                            padding:
-                                EdgeInsets.only(top: 0, left: 14, right: 14),
-                            height: 400,
-                            child:
-                                ownerFundList != null &&
-                                        ownerFundList.length > 0
-                                    ? ListView.separated(
-                                        separatorBuilder:
-                                            (BuildContext context, int index) {
-                                          return Divider(
-                                            height: 20,
-                                            color: Colors.white,
-                                          );
-                                        },
-                                        itemCount: ownerFundList.length + 1,
-                                        itemBuilder: (context, index) {
-                                          return index < ownerFundList.length
-                                              ? InkWell(
-                                                  onTap: () =>
-                                                      showNetValueAndShareModal(
-                                                          context,
-                                                          ownerFundList[
-                                                                      index] !=
-                                                                  null
-                                                              ? ownerFundList[
-                                                                      index]
-                                                                  .fundcode
-                                                              : '--'),
-                                                  child: Container(
-                                                    padding: EdgeInsets.all(12),
-                                                    decoration: BoxDecoration(
-                                                        borderRadius:
-                                                            BorderRadius.all(
-                                                          Radius.circular(8),
-                                                        ),
-                                                        gradient:
-                                                            LinearGradient(
-                                                                colors: [
-                                                              Colors.orange,
-                                                              Color(0xFFfc5531),
-                                                            ],
-                                                                begin: Alignment
-                                                                    .bottomLeft,
-                                                                end: Alignment
-                                                                    .topRight)),
-                                                    height: 144,
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .spaceBetween,
-                                                      crossAxisAlignment:
-                                                          CrossAxisAlignment
-                                                              .center,
-                                                      children: [
-                                                        Container(
-                                                          child: Column(
-                                                            crossAxisAlignment:
-                                                                CrossAxisAlignment
-                                                                    .start,
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: [
-                                                              Container(
-                                                                width: MediaQuery.of(
-                                                                            context)
-                                                                        .size
-                                                                        .width -
-                                                                    37 -
-                                                                    70,
-                                                                child: Row(
-                                                                  mainAxisAlignment:
-                                                                      MainAxisAlignment
-                                                                          .spaceBetween,
-                                                                  children: [
-                                                                    Container(
-                                                                      child:
-                                                                          Text(
-                                                                        ownerFundList[index] !=
-                                                                                null
-                                                                            ? ownerFundList[index].name
-                                                                            : '--',
-                                                                        style: TextStyle(
-                                                                            color:
-                                                                                Colors.white,
-                                                                            fontSize: 16),
-                                                                      ),
-                                                                    ),
-                                                                    Container(
-                                                                      child:
-                                                                          Text(
-                                                                        ownerFundList[index] !=
-                                                                                null
-                                                                            ? ownerFundList[index].fundcode
-                                                                            : '--',
-                                                                        style: TextStyle(
-                                                                            color:
-                                                                                Colors.white,
-                                                                            fontSize: 16),
-                                                                      ),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                              Container(
-                                                                width: MediaQuery.of(
-                                                                            context)
-                                                                        .size
-                                                                        .width -
-                                                                    37 -
-                                                                    70,
-                                                                child: Row(
-                                                                  mainAxisAlignment:
-                                                                      MainAxisAlignment
-                                                                          .spaceBetween,
-                                                                  children: [
-                                                                    Container(
-                                                                      child:
-                                                                          Text(
-                                                                        '估算净值',
-                                                                        style: TextStyle(
-                                                                            color:
-                                                                                Colors.white,
-                                                                            fontSize: 16),
-                                                                      ),
-                                                                    ),
-                                                                    Container(
-                                                                      child:
-                                                                          Text(
-                                                                        ownerFundList[index] !=
-                                                                                null
-                                                                            ? '${ownerFundList[index].gszzl.toString()}% (${double.parse(ownerFundList[index].gsz).toStringAsFixed(2)})'
-                                                                            : '--',
-                                                                        style: TextStyle(
-                                                                            color:
-                                                                                Colors.white,
-                                                                            fontSize: 16),
-                                                                      ),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                              Container(
-                                                                width: MediaQuery.of(
-                                                                            context)
-                                                                        .size
-                                                                        .width -
-                                                                    37 -
-                                                                    70,
-                                                                child: Row(
-                                                                  mainAxisAlignment:
-                                                                      MainAxisAlignment
-                                                                          .spaceBetween,
-                                                                  children: [
-                                                                    Container(
-                                                                      child:
-                                                                          Text(
-                                                                        '预估收益',
-                                                                        style: TextStyle(
-                                                                            color:
-                                                                                Colors.white,
-                                                                            fontSize: 16),
-                                                                      ),
-                                                                    ),
-                                                                    Container(
-                                                                      child:
-                                                                          Text(
-                                                                        ownerFundList[index] !=
-                                                                                null
-                                                                            ? costItemPreGains(ownerFundList[index])
-                                                                            : '--',
-                                                                        style: TextStyle(
-                                                                            color:
-                                                                                Colors.white,
-                                                                            fontSize: 16),
-                                                                      ),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                              Container(
-                                                                width: MediaQuery.of(
-                                                                            context)
-                                                                        .size
-                                                                        .width -
-                                                                    37 -
-                                                                    70,
-                                                                child: Row(
-                                                                  mainAxisAlignment:
-                                                                      MainAxisAlignment
-                                                                          .spaceBetween,
-                                                                  children: [
-                                                                    Container(
-                                                                      child:
-                                                                          Text(
-                                                                        '累计收益',
-                                                                        style: TextStyle(
-                                                                            color:
-                                                                                Colors.white,
-                                                                            fontSize: 16),
-                                                                      ),
-                                                                    ),
-                                                                    Container(
-                                                                      child: FutureBuilder<
-                                                                              String>(
-                                                                          future: costItemAllGains(ownerFundList[
-                                                                              index]),
-                                                                          builder:
-                                                                              (context, snapshot) {
-                                                                            if (snapshot.hasData) {
-                                                                              return Text(
-                                                                                snapshot.data,
-                                                                                style: TextStyle(color: Colors.white, fontSize: 16),
-                                                                              );
-                                                                            }
-                                                                            return Text(
-                                                                              '--',
-                                                                              style: TextStyle(color: Colors.white, fontSize: 16),
-                                                                            );
-                                                                          }),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                              Container(
-                                                                width: MediaQuery.of(
-                                                                            context)
-                                                                        .size
-                                                                        .width -
-                                                                    37 -
-                                                                    70,
-                                                                child: Row(
-                                                                  mainAxisAlignment:
-                                                                      MainAxisAlignment
-                                                                          .spaceBetween,
-                                                                  children: [
-                                                                    Container(
-                                                                      child:
-                                                                          Text(
-                                                                        '持有金额',
-                                                                        style: TextStyle(
-                                                                            color:
-                                                                                Colors.white,
-                                                                            fontSize: 16),
-                                                                      ),
-                                                                    ),
-                                                                    Container(
-                                                                      child: FutureBuilder<
-                                                                              String>(
-                                                                          future: calculateMoney(ownerFundList[
-                                                                              index]),
-                                                                          builder:
-                                                                              (context, snapshot) {
-                                                                            if (snapshot.hasData) {
-                                                                              return Text(
-                                                                                snapshot.data,
-                                                                                style: TextStyle(color: Colors.white, fontSize: 16),
-                                                                              );
-                                                                            }
-                                                                            return Text(
-                                                                              '--',
-                                                                              style: TextStyle(color: Colors.white, fontSize: 16),
-                                                                            );
-                                                                          }),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                        InkWell(
-                                                          onTap: () =>
-                                                              toggleOwner(
-                                                                  ownerFundList[
-                                                                          index]
-                                                                      .fundcode),
-                                                          child: Container(
-                                                            alignment: Alignment
-                                                                .center,
-                                                            width: 40,
-                                                            height: 40,
-                                                            decoration:
-                                                                BoxDecoration(
-                                                                    borderRadius:
-                                                                        BorderRadius
-                                                                            .all(
-                                                                      Radius.circular(
-                                                                          20),
-                                                                    ),
-                                                                    gradient: LinearGradient(
-                                                                        colors: [
-                                                                          Colors
-                                                                              .orange,
-                                                                          Color(
-                                                                              0xFFfc5531),
-                                                                        ],
-                                                                        begin: Alignment
-                                                                            .bottomLeft,
-                                                                        end: Alignment
-                                                                            .topRight)),
-                                                            child: Icon(
-                                                              Icons.check,
-                                                              color:
-                                                                  Colors.white,
-                                                              size: 30,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ))
-                                              : InkWell(
-                                                  onTap: deleteAllOwner,
-                                                  child: Container(
-                                                    alignment: Alignment.center,
-                                                    margin: EdgeInsets.only(
-                                                        top: 20, bottom: 24),
-                                                    height: 56,
-                                                    decoration: BoxDecoration(
-                                                        borderRadius:
-                                                            BorderRadius.all(
-                                                          Radius.circular(8),
-                                                        ),
-                                                        gradient:
-                                                            LinearGradient(
-                                                                colors: [
-                                                              Colors.orange,
-                                                              Color(0xFFfc5531),
-                                                            ],
-                                                                begin: Alignment
-                                                                    .bottomLeft,
-                                                                end: Alignment
-                                                                    .topRight)),
-                                                    child: Text(
-                                                      '清除所有',
-                                                      style: TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 18),
-                                                    ),
                                                   ),
-                                                );
-                                        },
-                                      )
-                                    : Center(
-                                        child: Text('你还没有添加持有的🐔嗷！'),
-                                      )))
+                                                ),
+                                                Container(
+                                                  child:
+                                                  Text(
+                                                    ownerFundList[index] !=
+                                                      null
+                                                      ? ownerFundList[index].fundcode
+                                                      : '--',
+                                                    style: TextStyle(
+                                                      color:
+                                                      Colors.white,
+                                                      fontSize: 16),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(
+                                            width: MediaQuery.of(
+                                              context)
+                                              .size
+                                              .width -
+                                              37 -
+                                              70,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                .spaceBetween,
+                                              children: [
+                                                Container(
+                                                  child:
+                                                  Text(
+                                                    '估算净值',
+                                                    style: TextStyle(
+                                                      color:
+                                                      Colors.white,
+                                                      fontSize: 16),
+                                                  ),
+                                                ),
+                                                Container(
+                                                  child:
+                                                  Text(
+                                                    ownerFundList[index] !=
+                                                      null
+                                                      ? '${ownerFundList[index].gszzl.toString()}% (${double.parse(ownerFundList[index].gsz).toStringAsFixed(2)})'
+                                                      : '--',
+                                                    style: TextStyle(
+                                                      color:
+                                                      Colors.white,
+                                                      fontSize: 16),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(
+                                            width: MediaQuery.of(
+                                              context)
+                                              .size
+                                              .width -
+                                              37 -
+                                              70,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                .spaceBetween,
+                                              children: [
+                                                Container(
+                                                  child:
+                                                  Text(
+                                                    '预估收益',
+                                                    style: TextStyle(
+                                                      color:
+                                                      Colors.white,
+                                                      fontSize: 16),
+                                                  ),
+                                                ),
+                                                Container(
+                                                  child:
+                                                  Text(
+                                                    ownerFundList[index] !=
+                                                      null
+                                                      ? costItemPreGains(ownerFundList[index]) == '-0.00'
+                                                      ? '0.00'
+                                                      : costItemPreGains(ownerFundList[index])
+                                                      : '--',
+                                                    style: TextStyle(
+                                                      color:
+                                                      Colors.white,
+                                                      fontSize: 16),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(
+                                            width: MediaQuery.of(
+                                              context)
+                                              .size
+                                              .width -
+                                              37 -
+                                              70,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                .spaceBetween,
+                                              children: [
+                                                Container(
+                                                  child:
+                                                  Text(
+                                                    '累计收益',
+                                                    style: TextStyle(
+                                                      color:
+                                                      Colors.white,
+                                                      fontSize: 16),
+                                                  ),
+                                                ),
+                                                Container(
+                                                  child: FutureBuilder<
+                                                    String>(
+                                                    future: costItemAllGains(ownerFundList[
+                                                    index]),
+                                                    builder:
+                                                      (context, snapshot) {
+                                                      if (snapshot.hasData) {
+                                                        return Text(
+                                                          snapshot.data,
+                                                          style: TextStyle(color: Colors.white, fontSize: 16),
+                                                        );
+                                                      }
+                                                      return Text(
+                                                        '--',
+                                                        style: TextStyle(color: Colors.white, fontSize: 16),
+                                                      );
+                                                    }),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(
+                                            width: MediaQuery.of(
+                                              context)
+                                              .size
+                                              .width -
+                                              37 -
+                                              70,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                .spaceBetween,
+                                              children: [
+                                                Container(
+                                                  child:
+                                                  Text(
+                                                    '持有金额',
+                                                    style: TextStyle(
+                                                      color:
+                                                      Colors.white,
+                                                      fontSize: 16),
+                                                  ),
+                                                ),
+                                                Container(
+                                                  child: FutureBuilder<
+                                                    String>(
+                                                    future: calculateMoney(ownerFundList[
+                                                    index]),
+                                                    builder:
+                                                      (context, snapshot) {
+                                                      if (snapshot.hasData) {
+                                                        return Text(
+                                                          snapshot.data,
+                                                          style: TextStyle(color: Colors.white, fontSize: 16),
+                                                        );
+                                                      }
+                                                      return Text(
+                                                        '--',
+                                                        style: TextStyle(color: Colors.white, fontSize: 16),
+                                                      );
+                                                    }),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    InkWell(
+                                      onTap: () =>
+                                        toggleOwner(
+                                          ownerFundList[
+                                          index]
+                                            .fundcode),
+                                      child: Container(
+                                        alignment: Alignment
+                                          .center,
+                                        width: 40,
+                                        height: 40,
+                                        decoration:
+                                        BoxDecoration(
+                                          borderRadius:
+                                          BorderRadius
+                                            .all(
+                                            Radius.circular(
+                                              20),
+                                          ),
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              Colors
+                                                .orange,
+                                              Color(
+                                                0xFFfc5531),
+                                            ],
+                                            begin: Alignment
+                                              .bottomLeft,
+                                            end: Alignment
+                                              .topRight)),
+                                        child: Icon(
+                                          Icons.check,
+                                          color:
+                                          Colors.white,
+                                          size: 30,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ))
+                              : InkWell(
+                              onTap: deleteAllOwner,
+                              child: Container(
+                                alignment: Alignment.center,
+                                margin: EdgeInsets.only(
+                                  top: 20, bottom: 24),
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  borderRadius:
+                                  BorderRadius.all(
+                                    Radius.circular(8),
+                                  ),
+                                  gradient:
+                                  LinearGradient(
+                                    colors: [
+                                      Colors.orange,
+                                      Color(0xFFfc5531),
+                                    ],
+                                    begin: Alignment
+                                      .bottomLeft,
+                                    end: Alignment
+                                      .topRight)),
+                                child: Text(
+                                  '清除所有',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18),
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                          : Center(
+                          child: Text('你还没有添加持有的🐔嗷！'),
+                        ))),
+                    ExpansionPanel(
+                      canTapOnHeader: true,
+                      isExpanded: _isOpen[1],
+                      headerBuilder: (context, isOpen) => Container(
+                        height: 90,
+                        margin:
+                        EdgeInsets.only(left: 14, top: 6, bottom: 6),
+                        padding: EdgeInsets.fromLTRB(12, 10, 12, 10),
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(8),
+                          ),
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.orange,
+                              Color(0xFFfc5531),
+                            ],
+                            begin: Alignment.bottomLeft,
+                            end: Alignment.topRight)),
+                        child: Column(
+                          mainAxisAlignment:
+                          MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Row(
+                              mainAxisAlignment:
+                              MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment:
+                              CrossAxisAlignment.center,
+                              children: [
+                                Container(
+                                  child: Text(
+                                    '累计收益：',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16),
+                                  ),
+                                ),
+                                Container(
+                                  child: FutureBuilder<String>(
+                                    future: costAllGains(),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.hasData) {
+                                        return Text(
+                                          snapshot.data,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16),
+                                        );
+                                      }
+                                      return Text(
+                                        '--',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16),
+                                      );
+                                    }),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment:
+                              MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment:
+                              CrossAxisAlignment.center,
+                              children: [
+                                Container(
+                                  child: Text(
+                                    '当日预估收益：',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16),
+                                  ),
+                                ),
+                                Container(
+                                  child: Text(
+                                    costPreGains(),
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16),
+                                  ),
+                                )
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment:
+                              MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment:
+                              CrossAxisAlignment.center,
+                              children: [
+                                Container(
+                                  child: Text(
+                                    '总持仓：',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16),
+                                  ),
+                                ),
+                                Container(
+                                  child: FutureBuilder<String>(
+                                    future: calculateAllMoney(),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.hasData) {
+                                        return Text(
+                                          snapshot.data,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16),
+                                        );
+                                      }
+                                      return Text(
+                                        '--',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16),
+                                      );
+                                    }),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      body: Container(
+                        padding:
+                        EdgeInsets.only(top: 0, left: 14, right: 14),
+                        height: 400,
+                        child:
+                        ownerFundList != null &&
+                          ownerFundList.length > 0
+                          ? ListView.separated(
+                          separatorBuilder:
+                            (BuildContext context, int index) {
+                            return Divider(
+                              height: 20,
+                              color: Colors.white,
+                            );
+                          },
+                          itemCount: ownerFundList.length + 1,
+                          itemBuilder: (context, index) {
+                            return index < ownerFundList.length
+                              ? InkWell(
+                              onTap: () =>
+                                showNetValueAndShareModal(
+                                  context,
+                                  ownerFundList[
+                                  index] !=
+                                    null
+                                    ? ownerFundList[
+                                  index]
+                                    .fundcode
+                                    : '--'),
+                              child: Container(
+                                padding: EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  borderRadius:
+                                  BorderRadius.all(
+                                    Radius.circular(8),
+                                  ),
+                                  gradient:
+                                  LinearGradient(
+                                    colors: [
+                                      Colors.orange,
+                                      Color(0xFFfc5531),
+                                    ],
+                                    begin: Alignment
+                                      .bottomLeft,
+                                    end: Alignment
+                                      .topRight)),
+                                height: 144,
+                                child: Row(
+                                  mainAxisAlignment:
+                                  MainAxisAlignment
+                                    .spaceBetween,
+                                  crossAxisAlignment:
+                                  CrossAxisAlignment
+                                    .center,
+                                  children: [
+                                    Container(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                        CrossAxisAlignment
+                                          .start,
+                                        mainAxisAlignment:
+                                        MainAxisAlignment
+                                          .spaceBetween,
+                                        children: [
+                                          Container(
+                                            width: MediaQuery.of(
+                                              context)
+                                              .size
+                                              .width -
+                                              37 -
+                                              70,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                .spaceBetween,
+                                              children: [
+                                                Container(
+                                                  child:
+                                                  Text(
+                                                    ownerFundList[index] !=
+                                                      null
+                                                      ? ownerFundList[index].name
+                                                      : '--',
+                                                    style: TextStyle(
+                                                      color:
+                                                      Colors.white,
+                                                      fontSize: 16),
+                                                  ),
+                                                ),
+                                                Container(
+                                                  child:
+                                                  Text(
+                                                    ownerFundList[index] !=
+                                                      null
+                                                      ? ownerFundList[index].fundcode
+                                                      : '--',
+                                                    style: TextStyle(
+                                                      color:
+                                                      Colors.white,
+                                                      fontSize: 16),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(
+                                            width: MediaQuery.of(
+                                              context)
+                                              .size
+                                              .width -
+                                              37 -
+                                              70,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                .spaceBetween,
+                                              children: [
+                                                Container(
+                                                  child:
+                                                  Text(
+                                                    '估算净值',
+                                                    style: TextStyle(
+                                                      color:
+                                                      Colors.white,
+                                                      fontSize: 16),
+                                                  ),
+                                                ),
+                                                Container(
+                                                  child:
+                                                  Text(
+                                                    ownerFundList[index] !=
+                                                      null
+                                                      ? '${ownerFundList[index].gszzl.toString()}% (${double.parse(ownerFundList[index].gsz).toStringAsFixed(2)})'
+                                                      : '--',
+                                                    style: TextStyle(
+                                                      color:
+                                                      Colors.white,
+                                                      fontSize: 16),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(
+                                            width: MediaQuery.of(
+                                              context)
+                                              .size
+                                              .width -
+                                              37 -
+                                              70,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                .spaceBetween,
+                                              children: [
+                                                Container(
+                                                  child:
+                                                  Text(
+                                                    '预估收益',
+                                                    style: TextStyle(
+                                                      color:
+                                                      Colors.white,
+                                                      fontSize: 16),
+                                                  ),
+                                                ),
+                                                Container(
+                                                  child:
+                                                  Text(
+                                                    ownerFundList[index] !=
+                                                      null
+                                                      ? costItemPreGains(ownerFundList[index]) == '-0.00'
+                                                      ? '0.00'
+                                                      : costItemPreGains(ownerFundList[index])
+                                                      : '--',
+                                                    style: TextStyle(
+                                                      color:
+                                                      Colors.white,
+                                                      fontSize: 16),
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(
+                                            width: MediaQuery.of(
+                                              context)
+                                              .size
+                                              .width -
+                                              37 -
+                                              70,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                .spaceBetween,
+                                              children: [
+                                                Container(
+                                                  child:
+                                                  Text(
+                                                    '累计收益',
+                                                    style: TextStyle(
+                                                      color:
+                                                      Colors.white,
+                                                      fontSize: 16),
+                                                  ),
+                                                ),
+                                                Container(
+                                                  child: FutureBuilder<
+                                                    String>(
+                                                    future: costItemAllGains(ownerFundList[
+                                                    index]),
+                                                    builder:
+                                                      (context, snapshot) {
+                                                      if (snapshot.hasData) {
+                                                        return Text(
+                                                          snapshot.data,
+                                                          style: TextStyle(color: Colors.white, fontSize: 16),
+                                                        );
+                                                      }
+                                                      return Text(
+                                                        '--',
+                                                        style: TextStyle(color: Colors.white, fontSize: 16),
+                                                      );
+                                                    }),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Container(
+                                            width: MediaQuery.of(
+                                              context)
+                                              .size
+                                              .width -
+                                              37 -
+                                              70,
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                .spaceBetween,
+                                              children: [
+                                                Container(
+                                                  child:
+                                                  Text(
+                                                    '持有金额',
+                                                    style: TextStyle(
+                                                      color:
+                                                      Colors.white,
+                                                      fontSize: 16),
+                                                  ),
+                                                ),
+                                                Container(
+                                                  child: FutureBuilder<
+                                                    String>(
+                                                    future: calculateMoney(ownerFundList[
+                                                    index]),
+                                                    builder:
+                                                      (context, snapshot) {
+                                                      if (snapshot.hasData) {
+                                                        return Text(
+                                                          snapshot.data,
+                                                          style: TextStyle(color: Colors.white, fontSize: 16),
+                                                        );
+                                                      }
+                                                      return Text(
+                                                        '--',
+                                                        style: TextStyle(color: Colors.white, fontSize: 16),
+                                                      );
+                                                    }),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    InkWell(
+                                      onTap: () =>
+                                        toggleOwner(
+                                          ownerFundList[
+                                          index]
+                                            .fundcode),
+                                      child: Container(
+                                        alignment: Alignment
+                                          .center,
+                                        width: 40,
+                                        height: 40,
+                                        decoration:
+                                        BoxDecoration(
+                                          borderRadius:
+                                          BorderRadius
+                                            .all(
+                                            Radius.circular(
+                                              20),
+                                          ),
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              Colors
+                                                .orange,
+                                              Color(
+                                                0xFFfc5531),
+                                            ],
+                                            begin: Alignment
+                                              .bottomLeft,
+                                            end: Alignment
+                                              .topRight)),
+                                        child: Icon(
+                                          Icons.check,
+                                          color:
+                                          Colors.white,
+                                          size: 30,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ))
+                              : InkWell(
+                              onTap: deleteAllOwner,
+                              child: Container(
+                                alignment: Alignment.center,
+                                margin: EdgeInsets.only(
+                                  top: 20, bottom: 24),
+                                height: 56,
+                                decoration: BoxDecoration(
+                                  borderRadius:
+                                  BorderRadius.all(
+                                    Radius.circular(8),
+                                  ),
+                                  gradient:
+                                  LinearGradient(
+                                    colors: [
+                                      Colors.orange,
+                                      Color(0xFFfc5531),
+                                    ],
+                                    begin: Alignment
+                                      .bottomLeft,
+                                    end: Alignment
+                                      .topRight)),
+                                child: Text(
+                                  '清除所有',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18),
+                                ),
+                              ),
+                            );
+                          },
+                        )
+                          : Center(
+                          child: Text('你还没有添加持有的🐔嗷！'),
+                        ))),
                   ],
                 ),
               ),
