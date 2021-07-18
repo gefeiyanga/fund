@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:fundapp/common/funs.dart';
 import 'package:fundapp/model/searchResult.dart';
 import 'package:fundapp/model/ownerFund.dart';
+import 'package:fundapp/model/crypto.dart';
 import 'package:flutter/services.dart';
 
 class Api {
@@ -15,7 +16,9 @@ class Api {
     _options = Options(extra: {
       "context": context,
       "followRedirects": false,
-      "validateStatus": (status) { return status < 500; }
+      "validateStatus": (status) {
+        return status < 500;
+      }
     });
   }
 
@@ -26,20 +29,17 @@ class Api {
     baseUrl: '',
   ));
 
-  static void init() {
-  }
+  static void init() {}
 
   // 基金搜索接口
   Future<List<Data>> searchFund(key) async {
-
     try {
       int now = DateTime.now().millisecondsSinceEpoch;
       var r = await dio.get(
         'http://fundsuggest.eastmoney.com/FundSearch/api/FundSearchAPI.ashx?callback=&m=1&key=$key&_=$now',
       );
       var result = searchResultItemFromJson(r.toString());
-      if (result!=null&&result.errCode==0) {
-
+      if (result != null && result.errCode == 0) {
         return result.datas;
       } else {
         showToast('SOMETHING ERROR!');
@@ -52,13 +52,12 @@ class Api {
 
   // 持有基金列表
   Future<OwnerFund> getFundDetail(code) async {
-
     try {
       int now = DateTime.now().millisecondsSinceEpoch;
       var r = await dio.get(
         'http://fundgz.1234567.com.cn/js/$code.js?rt=$now',
       );
-      if(RegExp(r"jsonpgz\((.+)\)").hasMatch(r.toString())) {
+      if (RegExp(r"jsonpgz\((.+)\)").hasMatch(r.toString())) {
         var result = RegExp(r"jsonpgz\((.+)\)").firstMatch(r.toString())[1];
         return ownerFundFromJson(result);
       } else {
@@ -69,36 +68,16 @@ class Api {
     }
   }
 
-
+  // btc价格接口
+  Future getCryptoPrice(String crypto) async {
+    try {
+      var r = await dio.get(
+        'https://api.coinbase.com/v2/prices/$crypto-CNY/spot',
+      );
+      var result = cryptoFromJson(r.toString());
+      return result;
+    } catch (e) {
+      print('e: $e}');
+    }
+  }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
