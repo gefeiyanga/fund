@@ -554,7 +554,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                             builder: (context, snapshot) {
                                               if (snapshot.hasData) {
                                                 return Text(
-                                                  snapshot.data,
+                                                  snapshot?.data,
                                                   style: TextStyle(
                                                       color: Colors.white,
                                                       fontSize: 16),
@@ -614,7 +614,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                             builder: (context, snapshot) {
                                               if (snapshot.hasData) {
                                                 return Text(
-                                                  snapshot.data,
+                                                  snapshot?.data,
                                                   style: TextStyle(
                                                       color: Colors.white,
                                                       fontSize: 16),
@@ -648,9 +648,10 @@ class _MyHomePageState extends State<MyHomePage> {
                                             color: Colors.white,
                                           );
                                         },
-                                        itemCount: ownerFundList.length + 1,
+                                        itemCount:
+                                            ownerFundList?.length ?? 0 + 1,
                                         itemBuilder: (context, index) {
-                                          return index < ownerFundList.length
+                                          return index < ownerFundList?.length
                                               ? InkWell(
                                                   onTap: () =>
                                                       showNetValueAndShareModal(
@@ -847,7 +848,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                               (context, snapshot) {
                                                                             if (snapshot.hasData) {
                                                                               return Text(
-                                                                                snapshot.data,
+                                                                                snapshot?.data,
                                                                                 style: TextStyle(color: Colors.white, fontSize: 16),
                                                                               );
                                                                             }
@@ -891,7 +892,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                               (context, snapshot) {
                                                                             if (snapshot.hasData) {
                                                                               return Text(
-                                                                                snapshot.data,
+                                                                                snapshot?.data,
                                                                                 style: TextStyle(color: Colors.white, fontSize: 16),
                                                                               );
                                                                             }
@@ -1022,7 +1023,12 @@ class _MyHomePageState extends State<MyHomePage> {
                                               fontSize: 16),
                                         ),
                                       ),
-                                      Container(child: Text('100W')),
+                                      Container(
+                                          child: Text(
+                                        '100W',
+                                        style: TextStyle(
+                                            color: Colors.white, fontSize: 16),
+                                      )),
                                     ],
                                   ),
                                   Row(
@@ -1055,7 +1061,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         body: Container(
                             padding:
                                 EdgeInsets.only(top: 0, left: 14, right: 14),
-                            height: 400,
+                            height: 500,
                             child: cryptoList != null && cryptoList.length > 0
                                 ? ListView.separated(
                                     separatorBuilder:
@@ -1066,7 +1072,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                       );
                                     },
                                     shrinkWrap: true,
-                                    itemCount: cryptoList.length,
+                                    itemCount: cryptoList?.length,
                                     itemBuilder: (context, index) {
                                       return InkWell(
                                           onTap: () =>
@@ -1179,7 +1185,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                   Crypto
                                                                       cryptyInfo =
                                                                       snapshot
-                                                                          .data;
+                                                                          ?.data;
                                                                   return Column(
                                                                     mainAxisAlignment:
                                                                         MainAxisAlignment
@@ -1199,7 +1205,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                           Container(
                                                                             child:
                                                                                 Text(
-                                                                              ownerCryptoData != null ? (double.parse(cryptyInfo.data.amount) * double.parse(ownerCryptoData[index])).toStringAsFixed(2) + ' ' + cryptyInfo.data.currency : '0' + ' ' + cryptyInfo.data.currency,
+                                                                              ownerCryptoData != null ? (double.parse(cryptyInfo?.data?.amount) * double.parse(ownerCryptoData[index])).toStringAsFixed(2) + ' ' + cryptyInfo?.data?.currency : '0' + ' ' + cryptyInfo?.data?.currency,
                                                                               style: TextStyle(color: Colors.white, fontSize: 16),
                                                                             ),
                                                                           ),
@@ -1219,7 +1225,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                                           Container(
                                                                             child:
                                                                                 Text(
-                                                                              double.parse(cryptyInfo.data.amount).toStringAsFixed(2) + ' ' + cryptyInfo.data.currency,
+                                                                              double.parse(cryptyInfo.data.amount).toStringAsFixed(2) + ' ' + cryptyInfo?.data?.currency,
                                                                               style: TextStyle(color: Colors.white, fontSize: 16),
                                                                             ),
                                                                           ),
@@ -1273,7 +1279,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         child: searchResultList != null &&
                                 searchResultList.length > 0
                             ? ListView.separated(
-                                itemCount: searchResultList.length,
+                                itemCount: searchResultList?.length,
                                 separatorBuilder:
                                     (BuildContext context, int index) {
                                   return Divider(

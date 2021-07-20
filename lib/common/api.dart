@@ -34,9 +34,9 @@ class Api {
   // 基金搜索接口
   Future<List<Data>> searchFund(key) async {
     try {
-      int now = DateTime.now().millisecondsSinceEpoch;
+      // int now = DateTime.now().millisecondsSinceEpoch;
       var r = await dio.get(
-        'http://fundsuggest.eastmoney.com/FundSearch/api/FundSearchAPI.ashx?callback=&m=1&key=$key&_=$now',
+        'https://fundsuggest.eastmoney.com/FundSearch/api/FundSearchAPI.ashx?callback=&m=1&key=$key',
       );
       var result = searchResultItemFromJson(r.toString());
       if (result != null && result.errCode == 0) {
@@ -55,7 +55,7 @@ class Api {
     try {
       int now = DateTime.now().millisecondsSinceEpoch;
       var r = await dio.get(
-        'http://fundgz.1234567.com.cn/js/$code.js?rt=$now',
+        'https://fundgz.1234567.com.cn/js/$code.js?rt=$now',
       );
       if (RegExp(r"jsonpgz\((.+)\)").hasMatch(r.toString())) {
         var result = RegExp(r"jsonpgz\((.+)\)").firstMatch(r.toString())[1];
